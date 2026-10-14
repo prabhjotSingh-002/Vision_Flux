@@ -33,7 +33,7 @@ PixelForge/
 │       ├── image.hpp             # Shared image data structure
 │       ├── image_io.hpp          # PNG/JPG loading and saving interfaces
 │       ├── upscale.hpp           # Upscaling public API (CPU, CUDA, Benchmark)
-│       └── grayscale.hpp         # Future module header (collaborator isolation)
+│       └── downscale.hpp         # Downscaling public API (CPU, CUDA)
 │
 ├── src/
 │   ├── app/
