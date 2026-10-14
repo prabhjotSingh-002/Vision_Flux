@@ -1,5 +1,6 @@
 #include "pixelforge/upscale.hpp"
 #include <cuda_runtime.h>
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <string>

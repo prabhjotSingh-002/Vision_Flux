@@ -1,6 +1,7 @@
 #include "pixelforge/image.hpp"
 #include "pixelforge/upscale.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
