@@ -1,5 +1,6 @@
 #include "pixelforge/image.hpp"
 #include "pixelforge/upscale.hpp"
+#include "pixelforge/downscale.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -149,9 +150,64 @@ void testCpuVsCudaIfAvailable() {
     ASSERT_TRUE(max_diff <= 1, "CPU and CUDA max difference <= 1 intensity level");
 }
 
+void testDownscaling() {
+    std::cout << "[Test] Downscaling dimensions (2x and 4x)...\n";
+    pixelforge::Image img512 = makeTestImage(512, 512, 3);
+
+    pixelforge::Image out2x = pixelforge::downscaleBilinearCPU(img512, 2);
+    ASSERT_TRUE(out2x.width == 256, "512x512 downscale 2x width == 256");
+    ASSERT_TRUE(out2x.height == 256, "512x512 downscale 2x height == 256");
+    ASSERT_TRUE(out2x.channels == 3, "Channels preserved in downscale");
+    ASSERT_TRUE(out2x.valid(), "Output downscale 2x is valid");
+
+    pixelforge::Image out4x = pixelforge::downscaleBilinearCPU(img512, 4);
+    ASSERT_TRUE(out4x.width == 128, "512x512 downscale 4x width == 128");
+    ASSERT_TRUE(out4x.height == 128, "512x512 downscale 4x height == 128");
+    ASSERT_TRUE(out4x.channels == 3, "Channels preserved in downscale 4x");
+    ASSERT_TRUE(out4x.valid(), "Output downscale 4x is valid");
+
+    // Odd dimensions
+    pixelforge::Image odd = makeTestImage(35, 49, 3);
+    pixelforge::Image odd_out = pixelforge::downscaleBilinearCPU(odd, 2);
+    ASSERT_TRUE(odd_out.width == 17, "35 / 2 == 17");
+    ASSERT_TRUE(odd_out.height == 24, "49 / 2 == 24");
+    ASSERT_TRUE(odd_out.valid(), "Odd downscale is valid");
+
+    // Invalid scale
+    ASSERT_THROWS(pixelforge::downscaleBilinearCPU(img512, 3), "downscale 3x rejected");
+}
+
+void testDownscaleCpuVsCudaIfAvailable() {
+    std::cout << "[Test] Downscaling CPU vs CUDA correctness (if CUDA available)...\n";
+    pixelforge::Image img = makeTestImage(256, 256, 3);
+    pixelforge::Image cpu_out = pixelforge::downscaleBilinearCPU(img, 2);
+
+    pixelforge::Image cuda_out;
+    std::string err;
+    bool ok = pixelforge::downscaleBilinearCUDA(img, 2, cuda_out, err);
+
+    if (!ok) {
+        std::cout << "  [Notice] Skipping downscale GPU comparison: " << err << "\n";
+        return;
+    }
+
+    ASSERT_TRUE(cuda_out.width == cpu_out.width, "Downscale width matches");
+    ASSERT_TRUE(cuda_out.height == cpu_out.height, "Downscale height matches");
+    ASSERT_TRUE(cuda_out.channels == cpu_out.channels, "Downscale channels match");
+
+    int max_diff = 0;
+    for (std::size_t i = 0; i < cpu_out.pixels.size(); ++i) {
+        int diff = std::abs(static_cast<int>(cpu_out.pixels[i]) - static_cast<int>(cuda_out.pixels[i]));
+        if (diff > max_diff) max_diff = diff;
+    }
+
+    std::cout << "  Max absolute difference (downscale CPU vs CUDA): " << max_diff << "\n";
+    ASSERT_TRUE(max_diff <= 1, "Downscale CPU and CUDA max difference <= 1 intensity level");
+}
+
 int main() {
     std::cout << "========================================================\n"
-              << " PixelForge Upscale Test Suite\n"
+              << " PixelForge Scale (Upscale & Downscale) Test Suite\n"
               << "========================================================\n";
 
     testDimensionsAndScaling();
@@ -160,6 +216,10 @@ int main() {
     testNonMultipleDimensions();
     testInvalidScale();
     testCpuVsCudaIfAvailable();
+
+    // Downscale tests
+    testDownscaling();
+    testDownscaleCpuVsCudaIfAvailable();
 
     std::cout << "========================================================\n";
     std::cout << "Results: " << g_passed << " passed, " << g_failed << " failed.\n";

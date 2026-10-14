@@ -13,6 +13,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CORE_SOURCES
     src/common/image_io.cpp
     src/upscale/upscale_cpu.cpp
+    src/downscale/downscale_cpu.cpp
 )
 
 if(PIXELFORGE_ENABLE_CUDA)
@@ -20,7 +21,10 @@ if(PIXELFORGE_ENABLE_CUDA)
     enable_language(CUDA)
     find_package(CUDAToolkit REQUIRED)
 
-    list(APPEND CORE_SOURCES src/upscale/upscale_cuda.cu)
+    list(APPEND CORE_SOURCES
+        src/upscale/upscale_cuda.cu
+        src/downscale/downscale_cuda.cu
+    )
 
     # Support modern NVIDIA GPU architectures (Turing, Ampere, Ada Lovelace, Hopper)
     if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
@@ -28,7 +32,10 @@ if(PIXELFORGE_ENABLE_CUDA)
     endif()
 else()
     message(STATUS "[PixelForge] Configuring with CPU-Only Backend (CUDA disabled/stubbed)")
-    list(APPEND CORE_SOURCES src/upscale/upscale_cuda_stub.cpp)
+    list(APPEND CORE_SOURCES
+        src/upscale/upscale_cuda_stub.cpp
+        src/downscale/downscale_cuda_stub.cpp
+    )
 endif()
 
 # Main CLI Application Target

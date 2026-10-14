@@ -106,11 +106,13 @@ cmake --build build --parallel 2
 
 ### Run CLI Commands
 ```bash
-# Upscale sample image 2x on CPU
+# Upscale sample image 2x / 4x on CPU
 ./build/pixelforge upscale samples/demo.png outputs/demo_2x.png --scale 2 --backend cpu
-
-# Upscale sample image 4x on CPU
 ./build/pixelforge upscale samples/demo.png outputs/demo_4x.png --scale 4 --backend cpu
+
+# Downscale sample image 2x (1/2 size) / 4x (1/4 size) on CPU
+./build/pixelforge downscale samples/demo.png outputs/demo_half.png --scale 2 --backend cpu
+./build/pixelforge downscale samples/demo.png outputs/demo_quarter.png --scale 4 --backend cpu
 
 # Run benchmark suite on CPU
 ./build/pixelforge benchmark samples/demo.png --scale 2 --csv benchmarks/results.csv
@@ -144,8 +146,9 @@ Test the custom CUDA kernel on a remote NVIDIA GPU without installing anything l
 # Step 3: Run correctness tests (validates CPU vs CUDA outputs)
 !./build/upscale_tests
 
-# Step 4: Upscale with CUDA kernel
+# Step 4: Upscale & Downscale with CUDA kernel
 !./build/pixelforge upscale samples/demo.png outputs/demo_cuda_2x.png --scale 2 --backend cuda
+!./build/pixelforge downscale samples/demo.png outputs/demo_cuda_half.png --scale 2 --backend cuda
 
 # Step 5: Run full benchmark matrix
 !./build/pixelforge benchmark --scale 2 --warmup 5 --runs 25 --csv benchmarks/results.csv

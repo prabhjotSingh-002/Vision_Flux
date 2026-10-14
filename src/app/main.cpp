@@ -1,6 +1,7 @@
 #include "pixelforge/image.hpp"
 #include "pixelforge/image_io.hpp"
 #include "pixelforge/upscale.hpp"
+#include "pixelforge/downscale.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -16,9 +17,10 @@ static void printUsage(const char* prog) {
               << "========================================================\n"
               << "Usage:\n"
               << "  " << prog << " upscale <input_path> <output_path> [options]\n"
+              << "  " << prog << " downscale <input_path> <output_path> [options]\n"
               << "  " << prog << " benchmark [input_path] [options]\n"
               << "  " << prog << " --help\n\n"
-              << "Upscale Options:\n"
+              << "Scaling Options (upscale & downscale):\n"
               << "  --scale <2|4>          Scaling factor (default: 2)\n"
               << "  --backend <cpu|cuda>   Processing backend (default: cpu)\n\n"
               << "Benchmark Options:\n"
@@ -29,6 +31,7 @@ static void printUsage(const char* prog) {
               << "Examples:\n"
               << "  " << prog << " upscale samples/demo.png outputs/demo_2x.png --scale 2 --backend cpu\n"
               << "  " << prog << " upscale samples/demo.png outputs/demo_cuda_2x.png --scale 2 --backend cuda\n"
+              << "  " << prog << " downscale samples/demo.png outputs/demo_half.png --scale 2 --backend cuda\n"
               << "  " << prog << " benchmark samples/demo.png --scale 2 --csv benchmarks/results.csv\n"
               << "========================================================\n";
 }
@@ -103,6 +106,84 @@ int main(int argc, char* argv[]) {
         } else {
             if (!pixelforge::upscaleBilinearCUDA(in_img, scale, out_img, err)) {
                 std::cerr << "[PixelForge Error] CUDA Upscaling failed: " << err << "\n";
+                return 1;
+            }
+        }
+
+        auto end_t = std::chrono::high_resolution_clock::now();
+        double elapsed_ms = std::chrono::duration<double, std::milli>(end_t - start_t).count();
+
+        std::cout << "[PixelForge] Done in " << std::fixed << std::setprecision(2)
+                  << elapsed_ms << " ms. Output size: "
+                  << out_img.width << "x" << out_img.height << "\n";
+
+        std::cout << "[PixelForge] Saving: " << output_path << " ...\n";
+        if (!pixelforge::saveImagePNG(output_path, out_img, err)) {
+            std::cerr << "[PixelForge Error] " << err << "\n";
+            return 1;
+        }
+
+        std::cout << "[PixelForge] Success! Output saved to: " << output_path << "\n";
+        return 0;
+    }
+
+    if (command == "downscale") {
+        if (argc < 4) {
+            std::cerr << "Error: 'downscale' command requires <input_path> and <output_path>.\n";
+            printUsage(argv[0]);
+            return 1;
+        }
+
+        const std::string input_path = argv[2];
+        const std::string output_path = argv[3];
+        int scale = 2;
+        std::string backend = "cpu";
+
+        for (int i = 4; i < argc; ++i) {
+            std::string arg = argv[i];
+            if (arg == "--scale" && i + 1 < argc) {
+                scale = std::stoi(argv[++i]);
+            } else if (arg == "--backend" && i + 1 < argc) {
+                backend = argv[++i];
+            } else {
+                std::cerr << "Warning: Unknown option '" << arg << "' ignored.\n";
+            }
+        }
+
+        if (scale != 2 && scale != 4) {
+            std::cerr << "Error: Invalid scale '" << scale << "'. Only 2 and 4 are supported.\n";
+            return 1;
+        }
+        if (backend != "cpu" && backend != "cuda") {
+            std::cerr << "Error: Invalid backend '" << backend << "'. Must be 'cpu' or 'cuda'.\n";
+            return 1;
+        }
+
+        std::cout << "[PixelForge] Loading: " << input_path << " ...\n";
+        pixelforge::Image in_img;
+        std::string err;
+        if (!pixelforge::loadImage(input_path, in_img, err)) {
+            std::cerr << "[PixelForge Error] " << err << "\n";
+            return 1;
+        }
+
+        std::cout << "[PixelForge] Image: " << in_img.width << "x" << in_img.height
+                  << " (" << in_img.channels << " channels)\n"
+                  << "[PixelForge] Downscaling " << scale << "x using [" << backend << "] backend...\n";
+
+        pixelforge::Image out_img;
+        auto start_t = std::chrono::high_resolution_clock::now();
+
+        if (backend == "cpu") {
+            try {
+                out_img = pixelforge::downscaleBilinearCPU(in_img, scale);
+            } catch (const std::exception& e) {
+                std::cerr << "[PixelForge Error] CPU Downscaling failed: " << e.what() << "\n";
+                return 1;
+            }
+        } else {
+            if (!pixelforge::downscaleBilinearCUDA(in_img, scale, out_img, err)) {
+                std::cerr << "[PixelForge Error] CUDA Downscaling failed: " << err << "\n";
                 return 1;
             }
         }
