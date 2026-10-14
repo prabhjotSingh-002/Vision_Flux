@@ -133,8 +133,8 @@ Test the custom CUDA kernel on a remote NVIDIA GPU without installing anything l
 !cmake --version
 
 # Step 1: Clone repository
-!git clone YOUR_REPOSITORY_URL PixelForge
-%cd PixelForge
+!git clone https://github.com/prabhjotSingh-002/Vision_Flux.git Vision_Flux
+%cd Vision_Flux
 !git checkout feature/cuda-upscale
 
 # Step 2: Build with CUDA enabled
