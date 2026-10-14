@@ -1,0 +1,32 @@
+# Build artifacts
+build/
+bin/
+*.exe
+*.o
+*.obj
+*.lib
+*.a
+*.pdb
+*.ilk
+
+# Outputs & Generated Benchmarks (keep directory structure)
+outputs/*
+!outputs/.gitkeep
+benchmarks/*
+!benchmarks/.gitkeep
+
+# IDE and Editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# OS specific
+Thumbs.db
+Desktop.ini
+.DS_Store
